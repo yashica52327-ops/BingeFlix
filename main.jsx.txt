@@ -1,0 +1,1289 @@
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import {
+  Search, Bookmark, Film, Tv, Sparkles, X, ChevronLeft, ChevronRight,
+  Home, Compass, User as UserIcon, Play, Calendar, TrendingUp, LogIn,
+  ArrowRight, Gift,
+} from "lucide-react";
+
+/* ============================== DATA ============================== */
+
+const VERDICTS = [
+  { key: "perfection", label: "Perfection", emoji: "💜", color: "var(--perfection)" },
+  { key: "goforit", label: "Go For It", emoji: "✅", color: "var(--goforit)" },
+  { key: "timepass", label: "Timepass", emoji: "👍", color: "var(--timepass)" },
+  { key: "skipit", label: "Skip It", emoji: "❌", color: "var(--skipit)" },
+];
+
+const GENRES = [
+  "Action", "Drama", "Sci-Fi", "Comedy", "Thriller", "Fantasy", "Horror",
+  "Crime", "Adventure", "Supernatural", "History", "Romance", "Mythology", "Spy",
+];
+
+const TITLES = [
+  {
+    id: "kalki2", title: "Kalki 2898 AD: Part Two", type: "movie", year: 2027,
+    genres: ["Sci-Fi", "Action", "Mythology"], meta: "Epic Sequel", platform: "Theatres",
+    status: "upcoming", releaseLabel: "Releasing 9 Jan 2027",
+    synopsis: "The saga of Bhairava and the last avatar hurtles toward its final battle for Kashi.",
+    votes: 9800, split: { perfection: 48, goforit: 32, timepass: 15, skipit: 5 },
+    reviews: [
+      { user: "@lorebae", verdict: "perfection", text: "Scale this ambitious deserves a big screen, no debate." },
+      { user: "@bingebaba", verdict: "goforit", text: "Mythology mashup is wild but it mostly lands." },
+    ],
+  },
+  {
+    id: "dune3", title: "Dune: Part Three", type: "movie", year: 2026,
+    genres: ["Sci-Fi", "Adventure"], meta: "Trilogy Finale", platform: "Theatres",
+    status: "upcoming", releaseLabel: "Releasing 18 Dec 2026",
+    synopsis: "Paul Atreides confronts the cost of prophecy as the desert throne is finally claimed.",
+    votes: 11200, split: { perfection: 55, goforit: 30, timepass: 11, skipit: 4 },
+    reviews: [
+      { user: "@sceneshifter", verdict: "perfection", text: "Villeneuve sticks the landing. Worth the wait." },
+      { user: "@nerdherd_neel", verdict: "goforit", text: "Dense in the middle but the finale earns it." },
+    ],
+  },
+  {
+    id: "oppenheimer", title: "Oppenheimer", type: "movie", year: 2023,
+    genres: ["Drama", "History"], meta: "3h 0m", platform: "Prime Video",
+    status: "released",
+    synopsis: "The physicist who built the bomb wrestles with what he unleashed on the world.",
+    votes: 31400, split: { perfection: 62, goforit: 26, timepass: 9, skipit: 3 },
+    reviews: [
+      { user: "@credits_karan", verdict: "perfection", text: "Three hours felt like thirty minutes. Unreal editing." },
+      { user: "@filmy_fatima", verdict: "goforit", text: "Heavy watch, but stayed with me for days." },
+    ],
+  },
+  {
+    id: "rrr", title: "RRR", type: "movie", year: 2022,
+    genres: ["Action", "Drama"], meta: "3h 7m", platform: "Netflix",
+    status: "released",
+    synopsis: "Two revolutionaries, one unlikely friendship, and a fight against an empire.",
+    votes: 42100, split: { perfection: 70, goforit: 20, timepass: 7, skipit: 3 },
+    reviews: [
+      { user: "@popcorn_priya", verdict: "perfection", text: "Rewatched it four times and it still hits." },
+      { user: "@vibecheck_vihaan", verdict: "perfection", text: "Interval block is cinema history at this point." },
+    ],
+  },
+  {
+    id: "deadpool3", title: "Deadpool & Wolverine", type: "movie", year: 2024,
+    genres: ["Action", "Comedy"], meta: "2h 8m", platform: "Disney+ Hotstar",
+    status: "released",
+    synopsis: "The Merc with a Mouth drags a reluctant Wolverine into a multiverse-sized mess.",
+    votes: 27600, split: { perfection: 44, goforit: 38, timepass: 14, skipit: 4 },
+    reviews: [
+      { user: "@reelgeek_dev", verdict: "goforit", text: "Fan service done right, cameo count is unreal." },
+      { user: "@mishmash_meher", verdict: "timepass", text: "Fun but forgets to slow down and breathe." },
+    ],
+  },
+  {
+    id: "jawan", title: "Jawan", type: "movie", year: 2023,
+    genres: ["Action", "Thriller"], meta: "2h 49m", platform: "Netflix",
+    status: "released",
+    synopsis: "A vigilante with many faces takes on a system built to protect the powerful.",
+    votes: 22300, split: { perfection: 41, goforit: 35, timepass: 18, skipit: 6 },
+    reviews: [
+      { user: "@crimson_kavya", verdict: "goforit", text: "Loud, messy, entertaining — exactly what it promised." },
+      { user: "@ghosttrailer", verdict: "timepass", text: "Great first half, second half runs out of steam." },
+    ],
+  },
+  {
+    id: "animal", title: "Animal", type: "movie", year: 2023,
+    genres: ["Crime", "Drama"], meta: "3h 21m", platform: "Netflix",
+    status: "released",
+    synopsis: "A son's devotion to his father curdles into something far more dangerous.",
+    votes: 19800, split: { perfection: 33, goforit: 29, timepass: 22, skipit: 16 },
+    reviews: [
+      { user: "@arcwarden_aisha", verdict: "timepass", text: "Technically sharp but the runtime tests your patience." },
+      { user: "@plottwist_priyanshu", verdict: "skipit", text: "Beautifully shot, exhausting to actually sit through." },
+    ],
+  },
+  {
+    id: "pathaan", title: "Pathaan", type: "movie", year: 2023,
+    genres: ["Action", "Spy"], meta: "2h 26m", platform: "Prime Video",
+    status: "released",
+    synopsis: "A disavowed agent returns from the shadows to stop a rogue plot at any cost.",
+    votes: 24700, split: { perfection: 38, goforit: 40, timepass: 17, skipit: 5 },
+    reviews: [
+      { user: "@ottaku_rohan", verdict: "goforit", text: "Popcorn spy movie that knows exactly what it is." },
+      { user: "@popcultpooja", verdict: "timepass", text: "Fun once, forgettable the second time around." },
+    ],
+  },
+  {
+    id: "moneyheist", title: "Money Heist", type: "show", year: 2021,
+    genres: ["Crime", "Thriller"], meta: "5 Seasons", platform: "Netflix",
+    status: "released",
+    synopsis: "The Professor and his crew rewrite the rules of the perfect robbery, twice.",
+    votes: 35200, split: { perfection: 58, goforit: 28, timepass: 10, skipit: 4 },
+    reviews: [
+      { user: "@midnightmarquee", verdict: "perfection", text: "The Professor never misses. Binged all parts twice." },
+      { user: "@sakura_savage", verdict: "goforit", text: "Later seasons dip but the heist energy stays." },
+    ],
+  },
+  {
+    id: "strangerthings5", title: "Stranger Things: Season 5", type: "show", year: 2026,
+    genres: ["Sci-Fi", "Horror"], meta: "Final Season", platform: "Netflix",
+    status: "upcoming", releaseLabel: "Releasing 27 Nov 2026",
+    synopsis: "Hawkins faces the Upside Down one last time, and not everyone walks away.",
+    votes: 18700, split: { perfection: 52, goforit: 31, timepass: 13, skipit: 4 },
+    reviews: [
+      { user: "@nerdherd_neel", verdict: "perfection", text: "Cannot believe this is the last ride. Already emotional." },
+      { user: "@bingebaba", verdict: "goforit", text: "Trailer alone gave me Hawkins chills again." },
+    ],
+  },
+  {
+    id: "familyman3", title: "The Family Man: Season 3", type: "show", year: 2026,
+    genres: ["Action", "Thriller"], meta: "New Season", platform: "Prime Video",
+    status: "upcoming", releaseLabel: "Releasing 12 Sep 2026",
+    synopsis: "Srikant Tiwari trades desk duty for a mission that hits closer to home.",
+    votes: 13400, split: { perfection: 60, goforit: 27, timepass: 10, skipit: 3 },
+    reviews: [
+      { user: "@sceneshifter", verdict: "perfection", text: "Manoj Bajpayee could read a menu and I'd watch it." },
+      { user: "@filmy_fatima", verdict: "goforit", text: "Best desi spy thriller, hands down, every season." },
+    ],
+  },
+  {
+    id: "panchayat4", title: "Panchayat: Season 4", type: "show", year: 2025,
+    genres: ["Comedy", "Drama"], meta: "4 Seasons", platform: "Prime Video",
+    status: "released",
+    synopsis: "Phulera's reluctant secretary is finally starting to feel like he belongs.",
+    votes: 16900, split: { perfection: 66, goforit: 24, timepass: 8, skipit: 2 },
+    reviews: [
+      { user: "@credits_karan", verdict: "perfection", text: "Warmest show on the platform, no contest at all." },
+      { user: "@popcorn_priya", verdict: "perfection", text: "Phulera feels like home at this point, honestly." },
+    ],
+  },
+  {
+    id: "demonslayer", title: "Demon Slayer: Infinity Castle", type: "anime", year: 2025,
+    genres: ["Action", "Fantasy"], meta: "Movie Trilogy", platform: "Theatres",
+    status: "released",
+    synopsis: "Tanjiro and the Hashira storm the castle for the fight that decides everything.",
+    votes: 29500, split: { perfection: 74, goforit: 18, timepass: 6, skipit: 2 },
+    reviews: [
+      { user: "@lorebae", verdict: "perfection", text: "Animation budget went somewhere insane. Every frame a painting." },
+      { user: "@ottaku_rohan", verdict: "perfection", text: "Theatre erupted twice. Worth every rupee of the ticket." },
+    ],
+  },
+  {
+    id: "jjk", title: "Jujutsu Kaisen", type: "anime", year: 2024,
+    genres: ["Action", "Supernatural"], meta: "2 Seasons", platform: "Crunchyroll",
+    status: "released",
+    synopsis: "A student swallows a cursed finger and inherits a war he never asked for.",
+    votes: 26800, split: { perfection: 57, goforit: 29, timepass: 11, skipit: 3 },
+    reviews: [
+      { user: "@reelgeek_dev", verdict: "goforit", text: "Fights are unmatched, pacing wobbles in the middle arcs." },
+      { user: "@sakura_savage", verdict: "perfection", text: "Gojo carries this show and I will die on that hill." },
+    ],
+  },
+  {
+    id: "aot", title: "Attack on Titan", type: "anime", year: 2023,
+    genres: ["Action", "Drama"], meta: "4 Seasons", platform: "Crunchyroll",
+    status: "released",
+    synopsis: "Behind humanity's last walls, the truth about the titans changes everything.",
+    votes: 33900, split: { perfection: 69, goforit: 21, timepass: 7, skipit: 3 },
+    reviews: [
+      { user: "@crimson_kavya", verdict: "perfection", text: "Best ending in modern anime, fight me on this." },
+      { user: "@arcwarden_aisha", verdict: "goforit", text: "Slow start, absolutely relentless once it gets going." },
+    ],
+  },
+  {
+    id: "onepiece", title: "One Piece", type: "anime", year: 2026,
+    genres: ["Adventure", "Fantasy"], meta: "Ongoing", platform: "Crunchyroll",
+    status: "released",
+    synopsis: "A rubber-bodied captain chases a legendary treasure across an endless ocean.",
+    votes: 38200, split: { perfection: 53, goforit: 30, timepass: 13, skipit: 4 },
+    reviews: [
+      { user: "@midnightmarquee", verdict: "goforit", text: "Long haul but the payoff arcs make it worth it." },
+      { user: "@vibecheck_vihaan", verdict: "perfection", text: "A thousand episodes in and I still cry every arc." },
+    ],
+  },
+  {
+    id: "chainsawman", title: "Chainsaw Man", type: "anime", year: 2025,
+    genres: ["Action", "Horror"], meta: "2 Seasons", platform: "Crunchyroll",
+    status: "released",
+    synopsis: "A devil-hunting debt gets paid off in the goriest way imaginable.",
+    votes: 17600, split: { perfection: 49, goforit: 32, timepass: 14, skipit: 5 },
+    reviews: [
+      { user: "@ghosttrailer", verdict: "goforit", text: "Unhinged in the best way. Not for the squeamish." },
+      { user: "@plottwist_priyanshu", verdict: "timepass", text: "Great concept, animation dips outside the big fights." },
+    ],
+  },
+  {
+    id: "squidgame", title: "Squid Game", type: "show", year: 2024,
+    genres: ["Thriller", "Drama"], meta: "3 Seasons", platform: "Netflix",
+    status: "released",
+    synopsis: "456 players, one prize pool, and games that were never really for children.",
+    votes: 40100, split: { perfection: 46, goforit: 33, timepass: 16, skipit: 5 },
+    reviews: [
+      { user: "@popcultpooja", verdict: "goforit", text: "Premise still hits even after all the hype." },
+      { user: "@mishmash_meher", verdict: "timepass", text: "Season one was lightning, sequels chase that feeling." },
+    ],
+  },
+];
+
+/* ============================== HELPERS ============================== */
+
+function hashHue(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  return Math.abs(h) % 360;
+}
+
+function posterGradient(seed) {
+  const hue = hashHue(seed);
+  const hue2 = (hue + 38) % 360;
+  const hue3 = (hue2 + 22) % 360;
+  return `linear-gradient(155deg, hsl(${hue} 68% 22%) 0%, hsl(${hue2} 70% 11%) 62%, hsl(${hue3} 55% 6%) 100%)`;
+}
+
+function dominantVerdict(split) {
+  return VERDICTS.reduce((best, v) => (split[v.key] > split[best.key] ? v : best), VERDICTS[0]);
+}
+
+function computeSplit(movie, userVerdict) {
+  const counts = {};
+  VERDICTS.forEach((v) => { counts[v.key] = Math.round((movie.votes * movie.split[v.key]) / 100); });
+  if (userVerdict) counts[userVerdict] += 1;
+  const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+  const pct = {};
+  VERDICTS.forEach((v) => { pct[v.key] = Math.round((counts[v.key] / total) * 1000) / 10; });
+  return pct;
+}
+
+/* ============================== STYLES ============================== */
+
+const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root{
+  --bg:#0A0A0F;
+  --surface:#15151D;
+  --surface-2:#1E1E28;
+  --border:#2A2A38;
+  --text:#F2F1F7;
+  --text-dim:#A6A3BE;
+  --brand-violet:#8B5CF6;
+  --brand-violet-light:#C4A6FF;
+  --brand-magenta:#EC4899;
+  --perfection:#A855F7;
+  --goforit:#22C55E;
+  --timepass:#F5B942;
+  --skipit:#F0454B;
+  --font-display:'Bebas Neue', sans-serif;
+  --font-body:'Plus Jakarta Sans', sans-serif;
+  --font-mono:'JetBrains Mono', monospace;
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+.moctale-root{ min-height:100vh; display:flex; flex-direction:column; background:var(--bg); color:var(--text); font-family:var(--font-body); }
+.main-content{ flex:1; }
+.moctale-root button{ font-family:inherit; }
+.moctale-root input, .moctale-root select{ font-family:inherit; }
+.moctale-root *:focus-visible{ outline:2px solid var(--brand-magenta); outline-offset:2px; border-radius:6px; }
+
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(16px);} to{ opacity:1; transform:translateY(0);} }
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+@keyframes slideUp{ from{ transform:translateY(24px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
+@keyframes floatGlow{ 0%,100%{ transform:translate(0,0);} 50%{ transform:translate(30px,-20px);} }
+
+@media (prefers-reduced-motion: reduce){
+  .moctale-root *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+}
+
+/* Navbar */
+.navbar{ position:sticky; top:0; z-index:40; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); background:rgba(10,10,15,.72); border-bottom:1px solid var(--border); }
+.navbar-inner{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 24px; max-width:1280px; margin:0 auto; }
+.brand{ background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; line-height:1; gap:3px; padding:0; }
+.brand-mark{ font-family:var(--font-display); font-size:1.5rem; letter-spacing:.06em; background:linear-gradient(135deg,#fff, var(--brand-magenta) 130%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.brand-mark.small{ font-size:1.1rem; display:block; margin-bottom:6px; }
+.brand-tag{ font-family:var(--font-mono); font-size:.6rem; letter-spacing:.08em; color:var(--text-dim); text-transform:uppercase; }
+.nav-links{ display:flex; gap:4px; }
+.nav-link{ background:none; border:none; color:var(--text-dim); font-weight:600; font-size:.9rem; padding:8px 14px; border-radius:999px; cursor:pointer; transition:color .15s ease, background .15s ease; }
+.nav-link:hover{ color:var(--text); }
+.nav-link.active{ color:var(--text); background:var(--surface-2); }
+.navbar-actions{ display:flex; align-items:center; gap:10px; }
+
+.search-box{ position:relative; display:flex; align-items:center; }
+.search-box:not(.static) input{
+  width:0; opacity:0; padding:0; margin-left:0; border:1px solid var(--border);
+  background:var(--surface); color:var(--text); border-radius:999px; font-size:.85rem;
+  transition:width .25s ease, opacity .2s ease, padding .25s ease, margin-left .25s ease;
+}
+.search-box.open:not(.static) input, .search-box:not(.static) input:focus{
+  width:200px; opacity:1; padding:8px 14px; margin-left:8px;
+}
+.search-box.static{ background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:0 14px; gap:8px; flex:1; max-width:380px; }
+.search-box.static input{ flex:1; border:none; background:transparent; color:var(--text); padding:11px 0; font-size:.9rem; }
+.search-box input::placeholder{ color:var(--text-dim); }
+.search-box input:focus{ outline:none; }
+.search-box svg{ color:var(--text-dim); flex-shrink:0; }
+
+.icon-btn{ position:relative; display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:999px; border:1px solid transparent; background:transparent; color:var(--text-dim); cursor:pointer; transition:background .15s ease, color .15s ease; }
+.icon-btn:hover{ background:var(--surface-2); color:var(--text); }
+.badge{ position:absolute; top:-2px; right:-2px; background:var(--brand-magenta); color:#fff; font-family:var(--font-mono); font-size:.62rem; min-width:16px; height:16px; border-radius:999px; display:flex; align-items:center; justify-content:center; padding:0 4px; }
+
+.user-chip{ display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:6px 14px 6px 6px; cursor:pointer; color:var(--text); }
+.user-avatar{ width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--brand-violet),var(--brand-magenta)); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:.8rem; flex-shrink:0; }
+.user-name{ font-size:.82rem; font-weight:600; white-space:nowrap; }
+.btn-signin{ display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,var(--brand-violet),var(--brand-magenta)); color:#fff; border:none; border-radius:999px; padding:9px 18px; font-weight:700; font-size:.85rem; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; white-space:nowrap; }
+.btn-signin:hover{ transform:translateY(-1px); box-shadow:0 6px 20px -6px rgba(139,92,246,.6); }
+
+/* Hero */
+.hero{ position:relative; max-width:1280px; margin:0 auto; padding:56px 24px 72px; display:grid; grid-template-columns:1.1fr .9fr; gap:44px; align-items:center; overflow:hidden; }
+.hero-glow{ position:absolute; width:480px; height:480px; border-radius:50%; filter:blur(110px); opacity:.35; pointer-events:none; z-index:0; animation:floatGlow 14s ease-in-out infinite; }
+.glow-a{ background:var(--brand-violet); top:-150px; left:-120px; }
+.glow-b{ background:var(--brand-magenta); bottom:-170px; right:-100px; animation-delay:-6s; }
+.hero-copy{ position:relative; z-index:1; }
+.hero-eyebrow{ font-family:var(--font-mono); font-size:.72rem; letter-spacing:.18em; color:var(--brand-violet-light); text-transform:uppercase; margin:0 0 14px; animation:fadeUp .6s ease both; }
+.hero-title{ font-family:var(--font-display); font-size:clamp(2.8rem,7vw,5.2rem); line-height:.94; letter-spacing:.01em; text-transform:uppercase; margin:0 0 20px; animation:fadeUp .6s ease .08s both; }
+.hero-sub{ color:var(--text-dim); font-size:1.02rem; line-height:1.6; max-width:480px; margin:0 0 28px; animation:fadeUp .6s ease .16s both; }
+.hero-cta-row{ display:flex; gap:14px; flex-wrap:wrap; animation:fadeUp .6s ease .24s both; }
+
+.btn-primary{ display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,var(--brand-violet),var(--brand-magenta)); color:#fff; border:none; border-radius:999px; padding:14px 26px; font-weight:700; font-size:.95rem; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; }
+.btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 30px -8px rgba(139,92,246,.55); }
+.btn-primary.sm{ padding:10px 18px; font-size:.85rem; }
+.btn-ghost{ display:inline-flex; align-items:center; gap:8px; background:transparent; border:1px solid var(--border); color:var(--text); border-radius:999px; padding:14px 26px; font-weight:600; font-size:.95rem; cursor:pointer; transition:background .15s ease, border-color .15s ease; }
+.btn-ghost:hover{ background:var(--surface-2); border-color:var(--text-dim); }
+.btn-ghost.sm{ padding:10px 18px; font-size:.85rem; }
+
+.spotlight-card{ position:relative; z-index:1; display:flex; gap:20px; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:20px; animation:fadeUp .7s ease .2s both; }
+.spotlight-poster{ position:relative; flex:0 0 130px; aspect-ratio:2/3; border-radius:14px; background-size:cover; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.spotlight-watermark{ opacity:.16; color:#fff; }
+.spotlight-info{ display:flex; flex-direction:column; gap:8px; min-width:0; }
+.spotlight-eyebrow{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--brand-magenta); }
+.spotlight-title{ font-family:var(--font-display); font-size:1.55rem; text-transform:uppercase; letter-spacing:.01em; line-height:1.05; margin:0; }
+.spotlight-meta{ font-family:var(--font-mono); font-size:.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin:0 0 4px; }
+.spotlight-actions{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; }
+
+/* Rails */
+.rail{ max-width:1280px; margin:0 auto; padding:32px 24px; }
+.rail-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.rail-title{ font-family:var(--font-display); font-size:1.35rem; text-transform:uppercase; letter-spacing:.02em; margin:0; }
+.rail-arrows{ display:flex; gap:8px; }
+.rail-arrows button{ width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .15s ease; }
+.rail-arrows button:hover{ background:var(--surface-2); }
+.rail-track{ display:flex; gap:16px; overflow-x:auto; scroll-snap-type:x proximity; padding-bottom:6px; scrollbar-width:none; }
+.rail-track::-webkit-scrollbar{ display:none; }
+.rail-track .poster-card{ flex:0 0 158px; scroll-snap-align:start; }
+
+/* Poster card */
+.poster-card{ position:relative; aspect-ratio:2/3; border-radius:14px; overflow:hidden; background:var(--surface); border:1px solid var(--border); }
+.poster{ position:absolute; inset:0; width:100%; height:100%; border:none; padding:0; margin:0; cursor:pointer; display:flex; align-items:flex-end; text-align:left; background-size:cover; background-position:center; }
+.poster-watermark{ position:absolute; top:44%; left:50%; transform:translate(-50%,-50%); color:#fff; opacity:.14; pointer-events:none; }
+.poster-scrim{ position:absolute; left:0; right:0; bottom:0; height:62%; background:linear-gradient(to top, rgba(4,4,8,.92), transparent); pointer-events:none; }
+.poster-info{ position:relative; z-index:2; padding:10px; display:flex; flex-direction:column; gap:5px; width:100%; }
+.poster-title{ font-family:var(--font-display); font-size:.92rem; text-transform:uppercase; letter-spacing:.01em; line-height:1.08; color:#fff; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.poster-meta-row{ display:flex; align-items:center; gap:6px; }
+.lean-dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; box-shadow:0 0 0 2px rgba(0,0,0,.5); }
+.poster-meta{ font-family:var(--font-mono); font-size:.6rem; letter-spacing:.03em; color:rgba(255,255,255,.65); text-transform:uppercase; }
+.poster-badge{ position:absolute; top:9px; left:9px; z-index:3; background:rgba(10,10,15,.75); border:1px solid var(--border); color:var(--text); font-family:var(--font-mono); font-size:.56rem; letter-spacing:.05em; text-transform:uppercase; padding:4px 8px; border-radius:999px; }
+.bookmark-btn{ position:absolute; top:9px; right:9px; z-index:3; width:30px; height:30px; border-radius:50%; border:1px solid rgba(255,255,255,.18); background:rgba(10,10,15,.6); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .15s ease, transform .15s ease; }
+.bookmark-btn:hover{ transform:scale(1.08); }
+.bookmark-btn.active{ background:linear-gradient(135deg,var(--brand-violet),var(--brand-magenta)); border-color:transparent; }
+.poster-uservote{ position:absolute; bottom:9px; right:9px; z-index:3; background:rgba(10,10,15,.75); border:1px solid var(--border); border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; font-size:.85rem; }
+
+/* Meter */
+.meter-bar{ display:flex; width:100%; height:9px; border-radius:999px; overflow:hidden; background:var(--surface-2); }
+.meter-seg{ height:100%; transition:width .4s ease; }
+.meter-legend{ display:grid; grid-template-columns:repeat(2,1fr); gap:6px 16px; margin-top:10px; }
+.meter-legend-item{ display:flex; align-items:center; gap:6px; font-size:.78rem; }
+.meter-legend-emoji{ font-size:.9rem; }
+.meter-legend-label{ color:var(--text-dim); flex:1; }
+.meter-legend-pct{ font-family:var(--font-mono); font-weight:700; }
+.meter-buttons{ display:flex; flex-wrap:wrap; gap:10px; }
+.meter-btn{ display:flex; flex-direction:column; align-items:center; gap:4px; flex:1 1 100px; padding:12px 8px; border-radius:14px; border:1.5px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer; transition:border-color .15s ease, background .15s ease, transform .15s ease, color .15s ease; }
+.meter-btn:hover{ transform:translateY(-2px); }
+.meter-btn-emoji{ font-size:1.3rem; }
+.meter-btn-label{ font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+.meter-btn.selected{ border-color:var(--verdict-color); background:var(--verdict-color); color:#0A0A0F; }
+
+/* Rewind banner */
+.rewind-banner{ max-width:1280px; margin:12px auto 60px; padding:28px 32px; border-radius:20px; background:linear-gradient(120deg, rgba(139,92,246,.18), rgba(236,72,153,.18)); border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:20px; cursor:pointer; transition:transform .15s ease, border-color .15s ease; flex-wrap:wrap; text-align:left; }
+.rewind-banner:hover{ transform:translateY(-2px); border-color:var(--brand-violet); }
+.rewind-eyebrow{ font-family:var(--font-mono); font-size:.66rem; letter-spacing:.14em; color:var(--brand-magenta); text-transform:uppercase; }
+.rewind-copy h2{ font-family:var(--font-display); font-size:1.65rem; text-transform:uppercase; margin:6px 0; }
+.rewind-copy p{ color:var(--text-dim); margin:0; max-width:480px; font-size:.92rem; }
+.rewind-cta{ display:inline-flex; align-items:center; gap:8px; font-weight:700; white-space:nowrap; }
+
+/* Discover / Watchlist / Profile shared */
+.discover, .profile{ max-width:1280px; margin:0 auto; padding:36px 24px 80px; }
+.discover-head{ margin-bottom:24px; }
+.page-title{ font-family:var(--font-display); font-size:2.3rem; text-transform:uppercase; margin:0 0 4px; }
+.page-sub{ color:var(--text-dim); font-size:.9rem; margin:0; }
+.discover-controls{ display:flex; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+.sort-select{ background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:0 16px; font-size:.85rem; cursor:pointer; }
+.type-pills{ display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.pill{ background:var(--surface); border:1px solid var(--border); color:var(--text-dim); padding:8px 18px; border-radius:999px; font-size:.82rem; font-weight:600; cursor:pointer; transition:all .15s ease; }
+.pill.active{ background:linear-gradient(135deg,var(--brand-violet),var(--brand-magenta)); color:#fff; border-color:transparent; }
+.genre-chips{ display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:20px; scrollbar-width:none; }
+.genre-chips::-webkit-scrollbar{ display:none; }
+.chip{ flex-shrink:0; background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:7px 14px; border-radius:999px; font-size:.78rem; cursor:pointer; transition:all .15s ease; white-space:nowrap; }
+.chip.active{ border-color:var(--brand-violet); color:#fff; background:rgba(139,92,246,.22); }
+.poster-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:18px; }
+.empty-state{ text-align:center; padding:64px 20px; border:1px dashed var(--border); border-radius:20px; }
+.empty-title{ font-family:var(--font-display); font-size:1.5rem; text-transform:uppercase; margin:0 0 6px; }
+.empty-sub{ color:var(--text-dim); margin:0 0 18px; }
+
+/* Profile */
+.profile-head{ display:flex; align-items:center; gap:16px; margin-bottom:28px; flex-wrap:wrap; }
+.profile-avatar{ width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,var(--brand-violet),var(--brand-magenta)); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:1.6rem; flex-shrink:0; }
+.profile-level{ font-family:var(--font-mono); font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--brand-magenta); }
+.profile-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:32px; }
+.stat-card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px; display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+.stat-num{ font-family:var(--font-display); font-size:2rem; }
+.stat-label{ color:var(--text-dim); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+.recap-card{ cursor:pointer; align-items:center; flex-direction:row; justify-content:center; gap:10px; color:var(--text); border:1px solid var(--brand-violet); background:rgba(139,92,246,.12); }
+.rated-list{ display:flex; flex-direction:column; gap:8px; }
+.rated-row{ display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:8px 12px; cursor:pointer; text-align:left; color:var(--text); width:100%; }
+.rated-poster{ width:34px; height:48px; border-radius:6px; background-size:cover; flex-shrink:0; }
+.rated-title{ flex:1; font-size:.88rem; font-weight:600; }
+.rated-verdict{ font-size:1.1rem; }
+
+.detail-section{ margin-top:26px; }
+.detail-section-title{ font-family:var(--font-display); font-size:1.15rem; text-transform:uppercase; letter-spacing:.02em; margin:0 0 4px; }
+.detail-section-sub{ color:var(--text-dim); font-size:.78rem; margin:0 0 10px; }
+
+/* Modals */
+.modal-overlay{ position:fixed; inset:0; z-index:100; background:rgba(4,4,8,.7); backdrop-filter:blur(6px); display:flex; align-items:flex-end; justify-content:center; animation:fadeIn .2s ease both; }
+@media (min-width:768px){ .modal-overlay{ align-items:center; padding:24px; } }
+.detail-panel{ position:relative; width:100%; max-width:640px; max-height:92vh; overflow-y:auto; background:var(--bg); border:1px solid var(--border); border-radius:24px 24px 0 0; animation:slideUp .3s ease both; }
+@media (min-width:768px){ .detail-panel{ border-radius:24px; } }
+.detail-close{ position:absolute; top:14px; right:14px; z-index:5; width:36px; height:36px; border-radius:50%; background:rgba(4,4,8,.55); border:1px solid rgba(255,255,255,.18); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.detail-backdrop{ position:relative; padding:34px 24px 26px; background-size:cover; }
+.detail-backdrop-watermark{ position:absolute; top:10%; right:6%; color:#fff; opacity:.12; pointer-events:none; }
+.detail-backdrop-scrim{ position:absolute; inset:0; background:linear-gradient(to bottom, rgba(4,4,8,.15), var(--bg) 96%); }
+.detail-heading{ position:relative; z-index:1; }
+.detail-type{ display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:.66rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-dim); margin-bottom:8px; }
+.detail-title{ font-family:var(--font-display); font-size:clamp(1.7rem,5vw,2.5rem); text-transform:uppercase; line-height:1; margin:0 0 10px; max-width:90%; }
+.detail-meta-row{ display:flex; gap:6px; font-family:var(--font-mono); font-size:.76rem; color:var(--text-dim); text-transform:uppercase; }
+.detail-upcoming-tag{ display:inline-flex; align-items:center; gap:6px; margin-top:12px; background:rgba(236,72,153,.16); border:1px solid rgba(236,72,153,.4); color:#f9a8d4; padding:6px 12px; border-radius:999px; font-size:.74rem; font-family:var(--font-mono); }
+.detail-ticket-divider{ position:relative; height:1px; margin:0 24px; border-top:2px dashed var(--border); }
+.detail-ticket-divider::before, .detail-ticket-divider::after{ content:''; position:absolute; top:-9px; width:18px; height:18px; border-radius:50%; background:var(--bg); border:1px solid var(--border); }
+.detail-ticket-divider::before{ left:-33px; }
+.detail-ticket-divider::after{ right:-33px; }
+.detail-body{ padding:24px; }
+.detail-genres{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.genre-chip{ background:var(--surface); border:1px solid var(--border); color:var(--text-dim); padding:5px 12px; border-radius:999px; font-size:.74rem; }
+.detail-synopsis{ color:var(--text); line-height:1.6; font-size:.96rem; margin:0 0 20px; }
+.detail-actions{ margin-bottom:8px; }
+.btn-watchlist{ display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); color:var(--text); padding:12px 20px; border-radius:999px; font-weight:600; font-size:.88rem; cursor:pointer; transition:all .15s ease; }
+.btn-watchlist.active{ background:linear-gradient(135deg,var(--brand-violet),var(--brand-magenta)); border-color:transparent; color:#fff; }
+.btn-watchlist.sm{ padding:9px 16px; font-size:.8rem; }
+.review-list{ display:flex; flex-direction:column; gap:10px; }
+.review-card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px; }
+.review-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.review-user{ font-weight:700; font-size:.85rem; color:var(--brand-violet-light); }
+.review-verdict{ font-size:1rem; }
+.review-text{ margin:0; color:var(--text-dim); font-size:.88rem; line-height:1.5; }
+.similar-row{ display:flex; gap:14px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
+.similar-row::-webkit-scrollbar{ display:none; }
+.similar-item{ flex:0 0 100px; background:none; border:none; color:var(--text); cursor:pointer; text-align:left; padding:0; }
+.similar-poster{ width:100px; height:150px; border-radius:10px; background-size:cover; margin-bottom:6px; }
+.similar-title{ font-size:.76rem; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+.auth-modal, .recap-modal{ position:relative; width:100%; max-width:400px; background:var(--surface); border:1px solid var(--border); border-radius:24px 24px 0 0; padding:28px 24px 32px; animation:slideUp .3s ease both; }
+@media (min-width:768px){ .auth-modal, .recap-modal{ border-radius:24px; } }
+.auth-title{ font-family:var(--font-display); font-size:1.65rem; text-transform:uppercase; margin:14px 0 6px; }
+.auth-sub{ color:var(--text-dim); font-size:.86rem; margin:0 0 20px; }
+.auth-input{ width:100%; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:12px; padding:12px 14px; font-size:.9rem; margin-bottom:14px; }
+.auth-btn{ width:100%; padding:13px; border-radius:12px; font-weight:700; font-size:.88rem; cursor:pointer; margin-bottom:10px; border:1px solid var(--border); transition:transform .15s ease; }
+.auth-btn:hover{ transform:translateY(-1px); }
+.auth-btn.google{ background:#fff; color:#1a1a1a; border-color:#fff; }
+.auth-btn.apple{ background:#0a0a0f; color:#fff; }
+.auth-btn.guest{ background:transparent; color:var(--text-dim); }
+.auth-note{ text-align:center; color:var(--text-dim); font-size:.7rem; margin:6px 0 0; }
+.recap-title{ font-family:var(--font-display); font-size:1.75rem; text-transform:uppercase; margin:10px 0 18px; }
+.recap-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+.recap-stat{ background:var(--surface-2); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:4px; }
+.recap-num{ font-family:var(--font-display); font-size:2rem; background:linear-gradient(135deg,var(--brand-violet),var(--brand-magenta)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.recap-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--border); font-size:.86rem; }
+.recap-highlight{ font-weight:700; text-align:right; }
+
+/* Mobile tab bar */
+.mobile-tabbar{ display:none; }
+.tab-btn{ background:none; border:none; color:var(--text-dim); display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 10px; cursor:pointer; }
+.tab-btn.active{ color:#fff; }
+.tab-icon-wrap{ position:relative; }
+.tab-badge{ position:absolute; top:-4px; right:-8px; background:var(--brand-magenta); color:#fff; font-size:.58rem; min-width:14px; height:14px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); }
+.tab-label{ font-size:.62rem; font-weight:600; }
+.site-footer{ text-align:center; padding:24px; color:var(--text-dim); font-size:.72rem; border-top:1px solid var(--border); }
+
+@media (max-width:900px){
+  .hero{ grid-template-columns:1fr; padding-top:40px; }
+}
+@media (max-width:520px){
+  .spotlight-card{ flex-direction:column; }
+  .spotlight-poster{ flex-basis:auto; width:100%; aspect-ratio:16/9; }
+  .profile-stats{ grid-template-columns:1fr 1fr; }
+  .recap-grid{ grid-template-columns:1fr; }
+}
+@media (max-width:480px){
+  .brand-tag{ display:none; }
+  .user-name{ display:none; }
+}
+@media (max-width:768px){
+  .nav-links{ display:none; }
+  .mobile-tabbar{ display:flex; position:fixed; bottom:0; left:0; right:0; z-index:40; background:rgba(10,10,15,.92); backdrop-filter:blur(14px); border-top:1px solid var(--border); padding:8px 6px calc(8px + env(safe-area-inset-bottom)); justify-content:space-around; }
+  .main-content{ padding-bottom:70px; }
+}
+`;
+
+/* ============================== SMALL COMPONENTS ============================== */
+
+function TypeIcon({ type, size = 16 }) {
+  if (type === "show") return <Tv size={size} strokeWidth={1.5} />;
+  if (type === "anime") return <Sparkles size={size} strokeWidth={1.5} />;
+  return <Film size={size} strokeWidth={1.5} />;
+}
+
+function MeterBar({ split }) {
+  const label = VERDICTS.map((v) => `${v.label} ${split[v.key]} percent`).join(", ");
+  return (
+    <div className="meter-bar" role="img" aria-label={`Community verdict: ${label}`}>
+      {VERDICTS.map((v) => (
+        <span key={v.key} className="meter-seg" style={{ width: `${split[v.key]}%`, background: v.color }} />
+      ))}
+    </div>
+  );
+}
+
+function MeterLegend({ split }) {
+  return (
+    <div className="meter-legend">
+      {VERDICTS.map((v) => (
+        <div key={v.key} className="meter-legend-item">
+          <span className="meter-legend-emoji">{v.emoji}</span>
+          <span className="meter-legend-label">{v.label}</span>
+          <span className="meter-legend-pct" style={{ color: v.color }}>{split[v.key]}%</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MeterButtons({ value, onChange }) {
+  return (
+    <div className="meter-buttons" role="group" aria-label="Rate this title">
+      {VERDICTS.map((v) => (
+        <button
+          key={v.key}
+          className={`meter-btn ${value === v.key ? "selected" : ""}`}
+          style={{ "--verdict-color": v.color }}
+          onClick={() => onChange(v.key)}
+          aria-pressed={value === v.key}
+        >
+          <span className="meter-btn-emoji">{v.emoji}</span>
+          <span className="meter-btn-label">{v.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PosterCard({ movie, inWatchlist, onToggleWatchlist, onOpen, userVerdict }) {
+  const dom = dominantVerdict(movie.split);
+  const verdictInfo = userVerdict ? VERDICTS.find((v) => v.key === userVerdict) : null;
+  return (
+    <div className="poster-card">
+      <button
+        className="poster"
+        style={{ backgroundImage: posterGradient(movie.id) }}
+        onClick={onOpen}
+        aria-label={`Open details for ${movie.title}`}
+      >
+        <span className="poster-watermark" aria-hidden="true"><TypeIcon type={movie.type} size={64} /></span>
+        <span className="poster-scrim" aria-hidden="true" />
+        <span className="poster-info">
+          <span className="poster-title">{movie.title}</span>
+          <span className="poster-meta-row">
+            <span className="lean-dot" style={{ background: dom.color }} aria-hidden="true" />
+            <span className="poster-meta">{movie.year} · {movie.meta}</span>
+          </span>
+        </span>
+        {movie.status === "upcoming" && <span className="poster-badge">Coming Soon</span>}
+      </button>
+      <button
+        className={`bookmark-btn ${inWatchlist ? "active" : ""}`}
+        onClick={(e) => { e.stopPropagation(); onToggleWatchlist(); }}
+        aria-pressed={inWatchlist}
+        aria-label={inWatchlist ? `Remove ${movie.title} from watchlist` : `Add ${movie.title} to watchlist`}
+      >
+        <Bookmark size={15} fill={inWatchlist ? "currentColor" : "none"} />
+      </button>
+      {verdictInfo && <span className="poster-uservote" title="Your verdict">{verdictInfo.emoji}</span>}
+    </div>
+  );
+}
+
+function Rail({ title, icon, movies, watchlist, toggleWatchlist, openMovie, userVerdicts }) {
+  const trackRef = useRef(null);
+  if (!movies.length) return null;
+  const scroll = (dir) => {
+    if (!trackRef.current) return;
+    trackRef.current.scrollBy({ left: dir * trackRef.current.clientWidth * 0.85, behavior: "smooth" });
+  };
+  return (
+    <section className="rail">
+      <div className="rail-head">
+        <h2 className="rail-title">{icon} {title}</h2>
+        <div className="rail-arrows">
+          <button aria-label={`Scroll ${title} left`} onClick={() => scroll(-1)}><ChevronLeft size={18} /></button>
+          <button aria-label={`Scroll ${title} right`} onClick={() => scroll(1)}><ChevronRight size={18} /></button>
+        </div>
+      </div>
+      <div className="rail-track" ref={trackRef}>
+        {movies.map((m) => (
+          <PosterCard
+            key={m.id}
+            movie={m}
+            inWatchlist={watchlist.has(m.id)}
+            onToggleWatchlist={() => toggleWatchlist(m.id)}
+            onOpen={() => openMovie(m.id)}
+            userVerdict={userVerdicts[m.id]}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ============================== NAV ============================== */
+
+function Navbar({ view, setView, watchlistCount, searchQuery, onSearchChange, user, onOpenAuth }) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  return (
+    <header className="navbar">
+      <div className="navbar-inner">
+        <button className="brand" onClick={() => setView("home")} aria-label="Moctale home">
+          <span className="brand-mark">MOCTALE</span>
+          <span className="brand-tag">Find Tales That Matter</span>
+        </button>
+
+        <nav className="nav-links" aria-label="Primary">
+          {[["home", "Home"], ["discover", "Discover"], ["watchlist", "Watchlist"]].map(([key, label]) => (
+            <button key={key} className={`nav-link ${view === key ? "active" : ""}`} onClick={() => setView(key)}>
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="navbar-actions">
+          <div className={`search-box ${searchOpen ? "open" : ""}`}>
+            <button className="icon-btn" onClick={() => setSearchOpen((s) => !s)} aria-label="Search">
+              <Search size={18} />
+            </button>
+            <input
+              type="text"
+              placeholder="Search movies, shows, anime…"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onFocus={() => setSearchOpen(true)}
+              aria-label="Search titles"
+            />
+          </div>
+
+          <button className="icon-btn" onClick={() => setView("watchlist")} aria-label={`Watchlist, ${watchlistCount} titles`}>
+            <Bookmark size={18} />
+            {watchlistCount > 0 && <span className="badge">{watchlistCount}</span>}
+          </button>
+
+          {user ? (
+            <button className="user-chip" onClick={() => setView("profile")}>
+              <span className="user-avatar">{user.name.charAt(0).toUpperCase()}</span>
+              <span className="user-name">{user.name}</span>
+            </button>
+          ) : (
+            <button className="btn-signin" onClick={onOpenAuth}><LogIn size={16} /> Sign In</button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function MobileTabBar({ view, setView, watchlistCount }) {
+  const items = [
+    { key: "home", label: "Home", icon: Home },
+    { key: "discover", label: "Discover", icon: Compass },
+    { key: "watchlist", label: "Watchlist", icon: Bookmark },
+    { key: "profile", label: "Profile", icon: UserIcon },
+  ];
+  return (
+    <nav className="mobile-tabbar" aria-label="Primary">
+      {items.map(({ key, label, icon: Icon }) => (
+        <button key={key} className={`tab-btn ${view === key ? "active" : ""}`} onClick={() => setView(key)}>
+          <span className="tab-icon-wrap">
+            <Icon size={20} />
+            {key === "watchlist" && watchlistCount > 0 && <span className="tab-badge">{watchlistCount}</span>}
+          </span>
+          <span className="tab-label">{label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+/* ============================== VIEWS ============================== */
+
+function HomeView({ spotlight, trending, popular, upcoming, watchlist, toggleWatchlist, openMovie, userVerdicts, onOpenRecap }) {
+  const split = spotlight ? computeSplit(spotlight, userVerdicts[spotlight.id]) : null;
+  return (
+    <>
+      <section className="hero">
+        <div className="hero-glow glow-a" aria-hidden="true" />
+        <div className="hero-glow glow-b" aria-hidden="true" />
+        <div className="hero-copy">
+          <p className="hero-eyebrow">Movies · Shows · Anime</p>
+          <h1 className="hero-title">Find Tales<br />That Matter</h1>
+          <p className="hero-sub">
+            Rated by people who actually watch them — not critics, not bots. Just the verdict that matters, four honest words at a time.
+          </p>
+          <div className="hero-cta-row">
+            <button
+              className="btn-primary"
+              onClick={() => document.getElementById("trending-rail")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              Start Exploring <ArrowRight size={16} />
+            </button>
+            <button className="btn-ghost" onClick={onOpenRecap}>See Your Recap</button>
+          </div>
+        </div>
+
+        {spotlight && (
+          <div className="spotlight-card">
+            <div className="spotlight-poster" style={{ backgroundImage: posterGradient(spotlight.id) }}>
+              <span className="spotlight-watermark"><TypeIcon type={spotlight.type} size={100} /></span>
+            </div>
+            <div className="spotlight-info">
+              <span className="spotlight-eyebrow"><TrendingUp size={13} /> #1 Trending Right Now</span>
+              <h3 className="spotlight-title">{spotlight.title}</h3>
+              <p className="spotlight-meta">{spotlight.year} · {spotlight.meta} · {spotlight.platform}</p>
+              <MeterBar split={split} />
+              <MeterLegend split={split} />
+              <div className="spotlight-actions">
+                <button className="btn-primary sm" onClick={() => openMovie(spotlight.id)}><Play size={14} /> View Details</button>
+                <button
+                  className={`btn-watchlist sm ${watchlist.has(spotlight.id) ? "active" : ""}`}
+                  onClick={() => toggleWatchlist(spotlight.id)}
+                >
+                  <Bookmark size={14} fill={watchlist.has(spotlight.id) ? "currentColor" : "none"} />
+                  {watchlist.has(spotlight.id) ? "Saved" : "Watchlist"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <div id="trending-rail">
+        <Rail title="Trending Now" icon="🔥" movies={trending} watchlist={watchlist} toggleWatchlist={toggleWatchlist} openMovie={openMovie} userVerdicts={userVerdicts} />
+      </div>
+      <Rail title="Popular With The Community" icon="💜" movies={popular} watchlist={watchlist} toggleWatchlist={toggleWatchlist} openMovie={openMovie} userVerdicts={userVerdicts} />
+      <Rail title="Upcoming Releases" icon="📅" movies={upcoming} watchlist={watchlist} toggleWatchlist={toggleWatchlist} openMovie={openMovie} userVerdicts={userVerdicts} />
+
+      <section
+        className="rewind-banner"
+        onClick={onOpenRecap}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === "Enter") onOpenRecap(); }}
+      >
+        <div className="rewind-copy">
+          <span className="rewind-eyebrow">Moctale Rewind</span>
+          <h2>Your Year In Cinema &amp; Pop Culture</h2>
+          <p>Every watchlist add and honest verdict, wrapped into one recap. See yours whenever you're ready.</p>
+        </div>
+        <span className="rewind-cta">View My Recap <ArrowRight size={16} /></span>
+      </section>
+    </>
+  );
+}
+
+function DiscoverView({ titles, searchQuery, onSearchChange, typeFilter, setTypeFilter, genreFilters, toggleGenre, sortBy, setSortBy, watchlist, toggleWatchlist, openMovie, userVerdicts }) {
+  const types = [["all", "All"], ["movie", "Movies"], ["show", "Shows"], ["anime", "Anime"]];
+  return (
+    <section className="discover">
+      <div className="discover-head">
+        <h1 className="page-title">Discover</h1>
+        <p className="page-sub">{titles.length} {titles.length === 1 ? "tale" : "tales"} match your filters</p>
+      </div>
+
+      <div className="discover-controls">
+        <div className="search-box static">
+          <Search size={16} />
+          <input type="text" placeholder="Search by title…" value={searchQuery} onChange={(e) => onSearchChange(e.target.value)} aria-label="Search titles" />
+        </div>
+        <select className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)} aria-label="Sort by">
+          <option value="trending">Trending</option>
+          <option value="top">Top Rated</option>
+          <option value="newest">Newest</option>
+          <option value="az">A–Z</option>
+        </select>
+      </div>
+
+      <div className="type-pills">
+        {types.map(([key, label]) => (
+          <button key={key} className={`pill ${typeFilter === key ? "active" : ""}`} onClick={() => setTypeFilter(key)}>{label}</button>
+        ))}
+      </div>
+
+      <div className="genre-chips">
+        {GENRES.map((g) => (
+          <button key={g} className={`chip ${genreFilters.has(g) ? "active" : ""}`} onClick={() => toggleGenre(g)}>{g}</button>
+        ))}
+      </div>
+
+      {titles.length > 0 ? (
+        <div className="poster-grid">
+          {titles.map((m) => (
+            <PosterCard
+              key={m.id}
+              movie={m}
+              inWatchlist={watchlist.has(m.id)}
+              onToggleWatchlist={() => toggleWatchlist(m.id)}
+              onOpen={() => openMovie(m.id)}
+              userVerdict={userVerdicts[m.id]}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          <p className="empty-title">No tales found</p>
+          <p className="empty-sub">Try a different search or clear a few filters.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function WatchlistView({ titles, watchlist, toggleWatchlist, openMovie, userVerdicts, goDiscover }) {
+  return (
+    <section className="discover">
+      <div className="discover-head">
+        <h1 className="page-title">Your Watchlist</h1>
+        <p className="page-sub">{titles.length} {titles.length === 1 ? "title" : "titles"} saved for later</p>
+      </div>
+      {titles.length > 0 ? (
+        <div className="poster-grid">
+          {titles.map((m) => (
+            <PosterCard
+              key={m.id}
+              movie={m}
+              inWatchlist={true}
+              onToggleWatchlist={() => toggleWatchlist(m.id)}
+              onOpen={() => openMovie(m.id)}
+              userVerdict={userVerdicts[m.id]}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          <p className="empty-title">Nothing saved yet</p>
+          <p className="empty-sub">Tap the bookmark on any tale that catches your eye.</p>
+          <button className="btn-primary sm" onClick={goDiscover}>Explore Titles</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ProfileView({ user, level, ratedCount, watchlistCount, ratedTitles, userVerdicts, onOpenAuth, onOpenRecap, openMovie }) {
+  return (
+    <section className="profile">
+      <div className="profile-head">
+        <span className="profile-avatar">{(user?.name || "G").charAt(0).toUpperCase()}</span>
+        <div>
+          <h1 className="page-title">{user?.name || "Guest Cinephile"}</h1>
+          <span className="profile-level">{level}</span>
+        </div>
+        {!user && <button className="btn-ghost sm" onClick={onOpenAuth}>Sign In</button>}
+      </div>
+
+      <div className="profile-stats">
+        <div className="stat-card"><span className="stat-num">{ratedCount}</span><span className="stat-label">Titles Rated</span></div>
+        <div className="stat-card"><span className="stat-num">{watchlistCount}</span><span className="stat-label">Watchlist</span></div>
+        <button className="stat-card recap-card" onClick={onOpenRecap}><Gift size={18} /><span className="stat-label">My Recap</span></button>
+      </div>
+
+      <div className="detail-section">
+        <h3 className="detail-section-title">Recently Rated</h3>
+        {ratedTitles.length > 0 ? (
+          <div className="rated-list">
+            {ratedTitles.map((m) => {
+              const v = VERDICTS.find((x) => x.key === userVerdicts[m.id]);
+              return (
+                <button key={m.id} className="rated-row" onClick={() => openMovie(m.id)}>
+                  <span className="rated-poster" style={{ backgroundImage: posterGradient(m.id) }} />
+                  <span className="rated-title">{m.title}</span>
+                  <span className="rated-verdict">{v?.emoji}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="empty-sub">Rate a few titles with the Moctale Meter and they'll show up here.</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ============================== MODALS ============================== */
+
+function MovieDetail({ movie, onClose, inWatchlist, onToggleWatchlist, userVerdict, onRate, similar, onOpenSimilar }) {
+  const split = computeSplit(movie, userVerdict);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="detail-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={movie.title}>
+        <button className="detail-close" onClick={onClose} aria-label="Close details"><X size={20} /></button>
+        <div className="detail-backdrop" style={{ backgroundImage: posterGradient(movie.id) }}>
+          <span className="detail-backdrop-watermark"><TypeIcon type={movie.type} size={130} /></span>
+          <div className="detail-backdrop-scrim" />
+          <div className="detail-heading">
+            <span className="detail-type"><TypeIcon type={movie.type} size={13} /> {movie.type}</span>
+            <h2 className="detail-title">{movie.title}</h2>
+            <div className="detail-meta-row">
+              <span>{movie.year}</span><span>·</span><span>{movie.meta}</span><span>·</span><span>{movie.platform}</span>
+            </div>
+            {movie.status === "upcoming" && (
+              <span className="detail-upcoming-tag"><Calendar size={12} /> {movie.releaseLabel}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="detail-ticket-divider" aria-hidden="true" />
+
+        <div className="detail-body">
+          <div className="detail-genres">
+            {movie.genres.map((g) => <span key={g} className="genre-chip">{g}</span>)}
+          </div>
+
+          <p className="detail-synopsis">{movie.synopsis}</p>
+
+          <div className="detail-actions">
+            <button className={`btn-watchlist ${inWatchlist ? "active" : ""}`} onClick={onToggleWatchlist}>
+              <Bookmark size={16} fill={inWatchlist ? "currentColor" : "none"} />
+              {inWatchlist ? "On Your Watchlist" : "Add to Watchlist"}
+            </button>
+          </div>
+
+          <div className="detail-section">
+            <h3 className="detail-section-title">The Moctale Meter</h3>
+            <p className="detail-section-sub">{Math.round(movie.votes / 100) / 10}k+ verdicts from the community</p>
+            <MeterBar split={split} />
+            <MeterLegend split={split} />
+          </div>
+
+          <div className="detail-section">
+            <h3 className="detail-section-title">Your Verdict</h3>
+            <MeterButtons value={userVerdict} onChange={onRate} />
+          </div>
+
+          <div className="detail-section">
+            <h3 className="detail-section-title">What People Are Saying</h3>
+            <div className="review-list">
+              {movie.reviews.map((r, i) => (
+                <div key={i} className="review-card">
+                  <div className="review-head">
+                    <span className="review-user">{r.user}</span>
+                    <span className="review-verdict">{VERDICTS.find((v) => v.key === r.verdict)?.emoji}</span>
+                  </div>
+                  <p className="review-text">{r.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {similar.length > 0 && (
+            <div className="detail-section">
+              <h3 className="detail-section-title">More Tales Like This</h3>
+              <div className="similar-row">
+                {similar.map((m) => (
+                  <button key={m.id} className="similar-item" onClick={() => onOpenSimilar(m.id)}>
+                    <span className="similar-poster" style={{ backgroundImage: posterGradient(m.id) }} />
+                    <span className="similar-title">{m.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AuthModal({ onClose, onSignIn }) {
+  const [name, setName] = useState("");
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="auth-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Sign in">
+        <button className="detail-close" onClick={onClose} aria-label="Close"><X size={18} /></button>
+        <span className="brand-mark small">MOCTALE</span>
+        <h2 className="auth-title">Join the culture</h2>
+        <p className="auth-sub">Save your watchlist, rate titles, and get your yearly Recap.</p>
+        <input
+          className="auth-input"
+          type="text"
+          placeholder="Pick a display name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={24}
+        />
+        <button className="auth-btn google" onClick={() => onSignIn(name)}>Continue with Google</button>
+        <button className="auth-btn apple" onClick={() => onSignIn(name)}>Continue with Apple</button>
+        <button className="auth-btn guest" onClick={() => onSignIn(name || "Guest Cinephile")}>Continue as Guest</button>
+        <p className="auth-note">Demo sign-in — no real account is created.</p>
+      </div>
+    </div>
+  );
+}
+
+function RecapModal({ stats, level, onClose, onExplore }) {
+  const favVerdict = VERDICTS.find((v) => v.key === stats.favoriteVerdict);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="recap-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Your Moctale Recap">
+        <button className="detail-close" onClick={onClose} aria-label="Close"><X size={18} /></button>
+        <span className="rewind-eyebrow">Moctale Rewind</span>
+        <h2 className="recap-title">Your Tales, So Far</h2>
+        <div className="recap-grid">
+          <div className="recap-stat"><span className="recap-num">{stats.rated}</span><span>Verdicts Given</span></div>
+          <div className="recap-stat"><span className="recap-num">{stats.watchlist}</span><span>On Your Watchlist</span></div>
+        </div>
+        <div className="recap-row">
+          <span>Favourite Verdict</span>
+          <span className="recap-highlight">{favVerdict ? `${favVerdict.emoji} ${favVerdict.label}` : "Rate a title to find out"}</span>
+        </div>
+        <div className="recap-row">
+          <span>Go-To Genre</span>
+          <span className="recap-highlight">{stats.favoriteGenre || "Still discovering"}</span>
+        </div>
+        <div className="recap-row">
+          <span>Culture Level</span>
+          <span className="recap-highlight">{level}</span>
+        </div>
+        <button className="btn-primary sm" onClick={onExplore} style={{ marginTop: 8, width: "100%", justifyContent: "center" }}>
+          Rate More Titles <ArrowRight size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== APP ============================== */
+
+export default function App() {
+  const [view, setView] = useState("home");
+  const [watchlist, setWatchlist] = useState(() => new Set());
+  const [userVerdicts, setUserVerdicts] = useState({});
+  const [ratedOrder, setRatedOrder] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [genreFilters, setGenreFilters] = useState(() => new Set());
+  const [sortBy, setSortBy] = useState("trending");
+  const [selectedId, setSelectedId] = useState(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [recapOpen, setRecapOpen] = useState(false);
+  const [user, setUser] = useState(null);
+
+  const toggleWatchlist = (id) => {
+    setWatchlist((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const rate = (id, verdict) => {
+    setUserVerdicts((prev) => ({ ...prev, [id]: verdict }));
+    setRatedOrder((prev) => (prev.includes(id) ? [...prev.filter((x) => x !== id), id] : [...prev, id]));
+  };
+
+  const openMovie = (id) => setSelectedId(id);
+  const closeMovie = () => setSelectedId(null);
+  const signIn = (name) => { setUser({ name: name && name.trim() ? name.trim() : "Guest Cinephile" }); setAuthOpen(false); };
+
+  const handleSearchChange = (v) => {
+    setSearchQuery(v);
+    if (v) setView("discover");
+  };
+
+  const toggleGenre = (g) => {
+    setGenreFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(g)) next.delete(g); else next.add(g);
+      return next;
+    });
+  };
+
+  const filteredTitles = useMemo(() => {
+    let list = TITLES.filter((m) => {
+      if (typeFilter !== "all" && m.type !== typeFilter) return false;
+      if (genreFilters.size > 0 && !m.genres.some((g) => genreFilters.has(g))) return false;
+      if (searchQuery && !m.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
+    if (sortBy === "top") list = [...list].sort((a, b) => b.split.perfection - a.split.perfection);
+    else if (sortBy === "az") list = [...list].sort((a, b) => a.title.localeCompare(b.title));
+    else if (sortBy === "newest") list = [...list].sort((a, b) => b.year - a.year);
+    else list = [...list].sort((a, b) => b.votes - a.votes);
+    return list;
+  }, [typeFilter, genreFilters, searchQuery, sortBy]);
+
+  const trending = useMemo(() => [...TITLES].filter((m) => m.status === "released").sort((a, b) => b.votes - a.votes).slice(0, 10), []);
+  const popular = useMemo(() => [...TITLES].filter((m) => m.status === "released").sort((a, b) => b.split.perfection - a.split.perfection).slice(0, 10), []);
+  const upcoming = useMemo(() => TITLES.filter((m) => m.status === "upcoming"), []);
+  const spotlight = trending[0];
+
+  const selectedMovie = selectedId ? TITLES.find((m) => m.id === selectedId) : null;
+  const similar = useMemo(() => {
+    if (!selectedMovie) return [];
+    return TITLES.filter((m) => m.id !== selectedMovie.id && m.genres.some((g) => selectedMovie.genres.includes(g))).slice(0, 6);
+  }, [selectedMovie]);
+
+  const watchlistTitles = useMemo(() => TITLES.filter((m) => watchlist.has(m.id)), [watchlist]);
+  const ratedTitles = useMemo(() => ratedOrder.slice().reverse().map((id) => TITLES.find((m) => m.id === id)).filter(Boolean), [ratedOrder]);
+
+  const level = useMemo(() => {
+    const n = ratedOrder.length;
+    if (n === 0) return "New Recruit";
+    if (n < 5) return "Casual Viewer";
+    if (n < 10) return "Cinephile in Training";
+    if (n < 15) return "Cinephile";
+    return "Certified Culture Head";
+  }, [ratedOrder]);
+
+  const recapStats = useMemo(() => {
+    const counts = { perfection: 0, goforit: 0, timepass: 0, skipit: 0 };
+    Object.values(userVerdicts).forEach((v) => { counts[v] = (counts[v] || 0) + 1; });
+    const favEntry = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    const genreCount = {};
+    [...watchlistTitles, ...ratedTitles].forEach((m) => m.genres.forEach((g) => { genreCount[g] = (genreCount[g] || 0) + 1; }));
+    const genreEntry = Object.entries(genreCount).sort((a, b) => b[1] - a[1])[0];
+    return {
+      rated: ratedOrder.length,
+      watchlist: watchlist.size,
+      favoriteVerdict: favEntry && favEntry[1] > 0 ? favEntry[0] : null,
+      favoriteGenre: genreEntry ? genreEntry[0] : null,
+    };
+  }, [userVerdicts, watchlistTitles, ratedTitles, ratedOrder, watchlist]);
+
+  return (
+    <>
+      <style>{STYLES}</style>
+      <div className="moctale-root">
+        <Navbar
+          view={view}
+          setView={setView}
+          watchlistCount={watchlist.size}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          user={user}
+          onOpenAuth={() => setAuthOpen(true)}
+        />
+
+        <main className="main-content">
+          {view === "home" && (
+            <HomeView
+              spotlight={spotlight}
+              trending={trending}
+              popular={popular}
+              upcoming={upcoming}
+              watchlist={watchlist}
+              toggleWatchlist={toggleWatchlist}
+              openMovie={openMovie}
+              userVerdicts={userVerdicts}
+              onOpenRecap={() => setRecapOpen(true)}
+            />
+          )}
+          {view === "discover" && (
+            <DiscoverView
+              titles={filteredTitles}
+              searchQuery={searchQuery}
+              onSearchChange={handleSearchChange}
+              typeFilter={typeFilter}
+              setTypeFilter={setTypeFilter}
+              genreFilters={genreFilters}
+              toggleGenre={toggleGenre}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              watchlist={watchlist}
+              toggleWatchlist={toggleWatchlist}
+              openMovie={openMovie}
+              userVerdicts={userVerdicts}
+            />
+          )}
+          {view === "watchlist" && (
+            <WatchlistView
+              titles={watchlistTitles}
+              watchlist={watchlist}
+              toggleWatchlist={toggleWatchlist}
+              openMovie={openMovie}
+              userVerdicts={userVerdicts}
+              goDiscover={() => setView("discover")}
+            />
+          )}
+          {view === "profile" && (
+            <ProfileView
+              user={user}
+              level={level}
+              ratedCount={ratedOrder.length}
+              watchlistCount={watchlist.size}
+              ratedTitles={ratedTitles}
+              userVerdicts={userVerdicts}
+              onOpenAuth={() => setAuthOpen(true)}
+              onOpenRecap={() => setRecapOpen(true)}
+              openMovie={openMovie}
+            />
+          )}
+        </main>
+
+        <MobileTabBar view={view} setView={setView} watchlistCount={watchlist.size} />
+
+        {selectedMovie && (
+          <MovieDetail
+            movie={selectedMovie}
+            onClose={closeMovie}
+            inWatchlist={watchlist.has(selectedMovie.id)}
+            onToggleWatchlist={() => toggleWatchlist(selectedMovie.id)}
+            userVerdict={userVerdicts[selectedMovie.id]}
+            onRate={(v) => rate(selectedMovie.id, v)}
+            similar={similar}
+            onOpenSimilar={(id) => setSelectedId(id)}
+          />
+        )}
+
+        {authOpen && <AuthModal onClose={() => setAuthOpen(false)} onSignIn={signIn} />}
+        {recapOpen && (
+          <RecapModal
+            stats={recapStats}
+            level={level}
+            onClose={() => setRecapOpen(false)}
+            onExplore={() => { setRecapOpen(false); setView("discover"); }}
+          />
+        )}
+
+        <footer className="site-footer">
+          <p>Fan-made concept UI inspired by moctale.in — built as a design demo, not affiliated with Moctale or Men of Culture.</p>
+        </footer>
+      </div>
+    </>
+  );
+}
